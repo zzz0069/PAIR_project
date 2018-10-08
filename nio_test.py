@@ -62,21 +62,3 @@ print(data)
 #data is a NumPy array or a Python sequence containing the same 
 #number of elements as the target file variable
 #nioss.variables['varName'][:] = data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
