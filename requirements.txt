@@ -1,1 +1,9 @@
 requests
+numpy
+netcdf4
+# use conda to install pygrib
+# $ conda install -c conda-forge pygrib
+# $	python setup.py build
+# $	python setup.py install
+# Run 'python test.py' to test your pygrib installation
+# $ python test.py
