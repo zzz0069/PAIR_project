@@ -45,10 +45,18 @@ def hour_to_daily_one_day():
 					continue
 				grb_one_day['%s'%varName] += nios.variables[varName].get_value()
 	return grb_one_day
-	
+
 def create_empty_netCDF():
 	rootgrp = Dataset("test.nc", "w", format="NETCDF4")
 
-def grb_daily_file_one_year():
+def write_to_netCDF():
 	pass
 
+def close_and_output_netCDF():
+	rootgrp.close()
+
+def netCDF_daily_file_one_year():
+	pass
+
+def netCDF_daily_file_all_year(start_year, end_year):
+	pass
