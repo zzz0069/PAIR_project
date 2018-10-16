@@ -1,9 +1,14 @@
 requests
 numpy
 netcdf4
+
 # use conda to install pygrib
-# $ conda install -c conda-forge pygrib
-# $	python setup.py build
-# $	python setup.py install
+# $conda install -c conda-forge pygrib
+# $python setup.py build
+# $python setup.py install
 # Run 'python test.py' to test your pygrib installation
-# $ python test.py
+# $python test.py
+
+#install Nio
+# $conda create --name pynio_env --channel conda-forge pynio
+# $source activate pynio_env
