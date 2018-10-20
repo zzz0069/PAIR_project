@@ -104,21 +104,13 @@ def hour_to_daily_one_day():
 				setattr(netCDF_data.variables['MIN_%s'%varName], key, value)
 			else:
 				setattr(netCDF_data.variables[varName], key, value)
-			# netCDF_data.variables[varName].key = value
-		# grb_attr = nio_vari.attributes
-		# netCDF_attr = netCDF_data.variables[varName].attributes
-		# for key, value in grb_attr.items():
-		# 	netCDF_attr[key] = value
 
-		#assign data to netcdf file
-		for key, value in grb_one_day.items():
-			if key == '_FillValue':
-				continue
-			if varName == 'TMP_110_HTGL':
-				netCDF_data.variables['MAX_%s'%varName][:] = grb_one_day[key]
-				netCDF_data.variables['MIN_%s'%varName][:] = grb_one_day[key]
-			else:
-				netCDF_data.variables[varName][:] = grb_one_day[key]
+
+		if varName == 'TMP_110_HTGL':
+			netCDF_data.variables['MAX_%s'%varName][:] = grb_one_day['MAX_%s'%varName]
+			netCDF_data.variables['MIN_%s'%varName][:] = grb_one_day['MIN_%s'%varName]
+		else:
+			netCDF_data.variables[varName][:] = grb_one_day[varName]
 	return netCDF_data
 
 print(hour_to_daily_one_day())
