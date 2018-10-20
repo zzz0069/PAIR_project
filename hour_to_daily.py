@@ -37,7 +37,7 @@ ignore_varnames = ['NCRAIN_110_SFC_acc1h',
 				  'DLWRF_110_SFC', 			
 				  'PEVAP_110_SFC_acc1h',
 				  'lat_110',
-				   'lon_110']
+				  'lon_110']
 
 def grb_file_name_one_day(file_path):
 	file_name_list = []
@@ -66,26 +66,62 @@ def hour_to_daily_one_day():
 			for varName in varNames:
 				if varName in ignore_varnames:
 					continue
-				if varName == 'TMP_110_HTGL':
+				elif varName == 'TMP_110_HTGL':
 					grb_one_day['MAX_%s'%varName] = np.maximum(nios.variables[varName].get_value(), grb_one_day['MAX_%s'%varName])	
 					grb_one_day['MIN_%s'%varName] = np.minimum(nios.variables[varName].get_value(), grb_one_day['MIN_%s'%varName])
 				else:
 					grb_one_day['%s'%varName] += nios.variables[varName].get_value()
+	
 	for key, value in grb_one_day.items():
 		if key in ['A_PCP_110_SFC_acc1h', 'MAX_TMP_110_HTGL', 'MAX_TMP_110_HTGL']:
 			continue
 		else:
 			grb_one_day[key] = value / HOURS
-	return grb_one_day
 
-def create_empty_netCDF():
-	rootgrp = Dataset("test.nc", "w", format="NETCDF4")
+	netCDF_data = Dataset("test.nc", "w", format="NETCDF4")
 
-def write_to_netCDF():
-	pass
+	#add dimensions
+	lat = netCDF_data.createDimension('lat_110', 224)
+	lon = netCDF_data.createDimension('lon_110', 464)
+	
+	#create and assign attr for all variables
+	for varName in varNames:
+		if varName in ignore_varnames:
+			continue
+		elif varName == 'TMP_110_HTGL':
+			netCDF_data.createVariable('MAX_%s'%varName, 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
+			netCDF_data.createVariable('MIN_%s'%varName, 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
+		else:
+			netCDF_data.createVariable(str(varName),'f',('lat_110', 'lon_110'), fill_value=1.0e+20)
 
-def close_and_output_netCDF():
-	rootgrp.close()
+		nio_vari = nios.variables[varName]
+		grb_attr = nio_vari.attributes
+		for key, value in grb_attr.items():
+			if key == '_FillValue':
+				continue
+			if varName == 'TMP_110_HTGL':
+				setattr(netCDF_data.variables['MAX_%s'%varName], key, value)
+				setattr(netCDF_data.variables['MIN_%s'%varName], key, value)
+			else:
+				setattr(netCDF_data.variables[varName], key, value)
+			# netCDF_data.variables[varName].key = value
+		# grb_attr = nio_vari.attributes
+		# netCDF_attr = netCDF_data.variables[varName].attributes
+		# for key, value in grb_attr.items():
+		# 	netCDF_attr[key] = value
+
+		#assign data to netcdf file
+		for key, value in grb_one_day.items():
+			if key == '_FillValue':
+				continue
+			if varName == 'TMP_110_HTGL':
+				netCDF_data.variables['MAX_%s'%varName][:] = grb_one_day[key]
+				netCDF_data.variables['MIN_%s'%varName][:] = grb_one_day[key]
+			else:
+				netCDF_data.variables[varName][:] = grb_one_day[key]
+	return netCDF_data
+
+print(hour_to_daily_one_day())
 
 def netCDF_daily_file_one_year():
 	pass
