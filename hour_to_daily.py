@@ -12,12 +12,12 @@ import glob
 from netCDF4 import Dataset
 
 PATH = '/Users/yymjzq/hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/2012/007/'
-lat_110 = 224
-lon_110 = 464
+LAT = 224
+LON = 464
 HOURS = 24
 
 #variables in original grb file of NLDAS-2 monitor data
-variable_names = ['PRES_110_SFC', 			#Pressure
+VARIABLE_NAMES = ['PRES_110_SFC', 			#Pressure
 				  'TMP_110_HTGL', 			#Temperature
 				  'U_GRD_110_HTGL',			#u-component of wind 
 				  'V_GRD_110_HTGL',			#v-component of wind 
@@ -32,14 +32,14 @@ variable_names = ['PRES_110_SFC', 			#Pressure
 				  'lon_110']				#longitude	
 
 #variables that not in new file
-ignore_varnames = ['NCRAIN_110_SFC_acc1h',	
+IGNORE_VARNAMES = ['NCRAIN_110_SFC_acc1h',	
 				  'CAPE_110_SPDY', 			
 				  'DSWRF_110_SFC', 			
 				  'DLWRF_110_SFC', 			
 				  'PEVAP_110_SFC_acc1h']
 
 #varlables that not divide HOURS
-daily_varnames = ['A_PCP_110_SFC_acc1h', 
+DAILY_VARNAMES = ['A_PCP_110_SFC_acc1h', 
 				  'MAX_TMP_110_HTGL', 
 				  'MAX_TMP_110_HTGL', 
 				  'lat_110', 
@@ -62,7 +62,7 @@ def hour_to_daily_one_day():
 		varNames = nios.variables.keys()
 		if grb_one_day == {}:
 			for varName in varNames:
-				if varName in ignore_varnames:
+				if varName in IGNORE_VARNAMES:
 					continue
 				if varName == 'TMP_110_HTGL':
 					grb_one_day['MAX_%s'%varName] = nios.variables[varName].get_value()	
@@ -71,7 +71,7 @@ def hour_to_daily_one_day():
 					grb_one_day['%s'%varName] = nios.variables[varName].get_value()
 		else:
 			for varName in varNames:
-				if varName in ignore_varnames:
+				if varName in IGNORE_VARNAMES:
 					continue
 				elif varName == 'TMP_110_HTGL':
 					grb_one_day['MAX_%s'%varName] = np.maximum(nios.variables[varName].get_value(), grb_one_day['MAX_%s'%varName])	
@@ -82,7 +82,7 @@ def hour_to_daily_one_day():
 					grb_one_day['%s'%varName] += nios.variables[varName].get_value()
 	
 	for key, value in grb_one_day.items():
-		if key in daily_varnames:
+		if key in DAILY_VARNAMES:
 			continue
 		else:
 			grb_one_day[key] = value / HOURS
@@ -90,12 +90,12 @@ def hour_to_daily_one_day():
 	netCDF_data = Dataset("test.nc", "w", format="NETCDF4")
 
 	#add dimensions
-	lat = netCDF_data.createDimension('lat_110', 224)
-	lon = netCDF_data.createDimension('lon_110', 464)
+	lat = netCDF_data.createDimension('lat_110', LAT)
+	lon = netCDF_data.createDimension('lon_110', LON)
 
 	#create and assign attr for all variables
 	for varName in varNames:
-		if varName in ignore_varnames:
+		if varName in IGNORE_VARNAMES:
 			continue
 		elif varName == 'TMP_110_HTGL':
 			netCDF_data.createVariable('MAX_%s'%varName, 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
@@ -116,15 +116,12 @@ def hour_to_daily_one_day():
 			else:
 				setattr(netCDF_data.variables[varName], key, value)
 
-
 		if varName == 'TMP_110_HTGL':
 			netCDF_data.variables['MAX_%s'%varName][:] = grb_one_day['MAX_%s'%varName]
 			netCDF_data.variables['MIN_%s'%varName][:] = grb_one_day['MIN_%s'%varName]
 		else:
 			netCDF_data.variables[varName][:] = grb_one_day[varName]
 	return netCDF_data
-
-print(hour_to_daily_one_day())
 
 def netCDF_daily_file_one_year():
 	pass
