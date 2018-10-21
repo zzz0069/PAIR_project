@@ -31,13 +31,20 @@ variable_names = ['PRES_110_SFC', 			#Pressure
 				  'lat_110',				#latitude
 				  'lon_110']				#longitude	
 
+#variables that not in new file
 ignore_varnames = ['NCRAIN_110_SFC_acc1h',	
 				  'CAPE_110_SPDY', 			
 				  'DSWRF_110_SFC', 			
 				  'DLWRF_110_SFC', 			
-				  'PEVAP_110_SFC_acc1h',
-				  'lat_110',
+				  'PEVAP_110_SFC_acc1h']
+
+#varlables that not divide HOURS
+daily_varnames = ['A_PCP_110_SFC_acc1h', 
+				  'MAX_TMP_110_HTGL', 
+				  'MAX_TMP_110_HTGL', 
+				  'lat_110', 
 				  'lon_110']
+
 
 def grb_file_name_one_day(file_path):
 	file_name_list = []
@@ -59,7 +66,7 @@ def hour_to_daily_one_day():
 					continue
 				if varName == 'TMP_110_HTGL':
 					grb_one_day['MAX_%s'%varName] = nios.variables[varName].get_value()	
-					grb_one_day['MIN_%s'%varName] = nios.variables[varName].get_value()
+					grb_one_day['MIN_%s'%varName] = nios.variables[varName].get_value()					
 				else:
 					grb_one_day['%s'%varName] = nios.variables[varName].get_value()
 		else:
@@ -69,11 +76,13 @@ def hour_to_daily_one_day():
 				elif varName == 'TMP_110_HTGL':
 					grb_one_day['MAX_%s'%varName] = np.maximum(nios.variables[varName].get_value(), grb_one_day['MAX_%s'%varName])	
 					grb_one_day['MIN_%s'%varName] = np.minimum(nios.variables[varName].get_value(), grb_one_day['MIN_%s'%varName])
+				elif varName in ['lat_110', 'lon_110']:
+					continue
 				else:
 					grb_one_day['%s'%varName] += nios.variables[varName].get_value()
 	
 	for key, value in grb_one_day.items():
-		if key in ['A_PCP_110_SFC_acc1h', 'MAX_TMP_110_HTGL', 'MAX_TMP_110_HTGL']:
+		if key in daily_varnames:
 			continue
 		else:
 			grb_one_day[key] = value / HOURS
@@ -83,7 +92,7 @@ def hour_to_daily_one_day():
 	#add dimensions
 	lat = netCDF_data.createDimension('lat_110', 224)
 	lon = netCDF_data.createDimension('lon_110', 464)
-	
+
 	#create and assign attr for all variables
 	for varName in varNames:
 		if varName in ignore_varnames:
@@ -91,6 +100,8 @@ def hour_to_daily_one_day():
 		elif varName == 'TMP_110_HTGL':
 			netCDF_data.createVariable('MAX_%s'%varName, 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
 			netCDF_data.createVariable('MIN_%s'%varName, 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
+		elif varName in ['lat_110', 'lon_110']:
+			netCDF_data.createVariable(str(varName), 'f', (varName,))
 		else:
 			netCDF_data.createVariable(str(varName),'f',('lat_110', 'lon_110'), fill_value=1.0e+20)
 
