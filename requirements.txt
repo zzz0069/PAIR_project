@@ -9,6 +9,6 @@ netcdf4
 # Run 'python test.py' to test your pygrib installation
 # $python test.py
 
-#install Nio
-# $conda create --name pynio_env --channel conda-forge pynio
+#install Nio/netcdf4
+# $conda create --name pynio_env --channel conda-forge pynio netcdf4
 # $source activate pynio_env
