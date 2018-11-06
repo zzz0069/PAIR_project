@@ -16,6 +16,8 @@ from pyeto import convert
 
 
 PATH = '/home/brad/hydro1/data/NLDAS/NLDAS_FORA0125_H.002/2018/007/'
+day_of_year = 7
+altitude = 200
 LAT = 224
 LON = 464
 HOURS = 24
@@ -49,7 +51,8 @@ DAILY_VARNAMES = ['A_PCP_110_SFC_acc1h',
                   'MAX_SPF_H_110_HTGL',
                   'MIN_SPF_H_110_HTGL',
                   'lat_110',
-                  'lon_110']
+                  'lon_110',
+                  'SOL_DEC']
 
 
 def grb_file_name_one_day():
@@ -66,7 +69,10 @@ def hourly_to_daily_one_day():
 
     for grb in grbs:
         nios = Nio.open_file(grb, mode='r', options=None, history='', format='')
+        #print(nios.dimensions)
         varNames = nios.variables.keys()
+        #print(varNames)
+       # var = nios.create_variable('var',  'f', ('lat_110', 'lon_110'))
         if grb_one_day == {}:
             for varName in varNames:
                 if varName in IGNORE_VARNAMES:
@@ -80,6 +86,7 @@ def hourly_to_daily_one_day():
                     grb_one_day['%s' % varName] = nios.variables[varName].get_value()
                 else:
                     grb_one_day['%s' % varName] = nios.variables[varName].get_value()
+                    #grb_one_day['SOL_DEC'] = pyeto.sol_dec(day_of_year)
         else:
             for varName in varNames:
                 if varName in IGNORE_VARNAMES:
@@ -99,6 +106,7 @@ def hourly_to_daily_one_day():
                     continue
                 else:
                     grb_one_day['%s' % varName] += nios.variables[varName].get_value()
+                    #grb_one_day['SOL_DEC'] = pyeto.sol_dec(day_of_year)
 
     for key, value in grb_one_day.items():
         if key in DAILY_VARNAMES:
@@ -107,34 +115,79 @@ def hourly_to_daily_one_day():
             grb_one_day[key] = value / HOURS
 
     #calculate avgerage temperature
-    avg_max_min_tmp = (grb_one_day['MAX_TMP_110_HTGL'] + grb_one_day['MIN_TMP_110_HTGL']) / 2
-    grb_one_day['AVG_MAX_MIN_TMP_110_HTGL'] = avg_max_min_tmp
-    #convert to celcius for later use
-    min_tmp_c = convert.kelvin2celsius(grb_one_day['MIN_TMP_110_HTGL'])
-    max_tmp_c = convert.kelvin2celsius(grb_one_day['MAX_TMP_110_HTGL'])
-    avg_max_min_tmp_c = convert.kelvin2celsius(avg_max_min_tmp)
+    grb_one_day['AVG_MAX_MIN_TMP_110_HTGL'] = (grb_one_day['MAX_TMP_110_HTGL'] + grb_one_day['MIN_TMP_110_HTGL']) / 2
+
 
     #calclate windspeed
     wind_speed = np.sqrt(np.square(grb_one_day['U_GRD_110_HTGL']) + np.square(grb_one_day['V_GRD_110_HTGL']))
     grb_one_day['WIND_SPEED'] = wind_speed
 
-    #calculate net_rad
-    #net_in_sol_rad = pyeto.net_in_sol_rad(grb_one_day['DSWRF_110_SFC'])
-    #net_out_lw_rad = pyeto.net_out_lw_rad(min_tmp_k, max_tmp_k, grb_one_day['DLWRF_110_SFC'], pyeto.cs_rad(), pyeto.avp_from_tmin(min_tmp_k))
-    #net_rad = pyeto.net_rad(net_in_sol_rad, net_out_lw_rad)
-    #calclate reference evapotranspiration
-    #print(net_rad)
-    #print(pyeto.avp_from_tmin(min_tmp_c))
-    ET = pyeto.fao56_penman_monteith(
-        net_rad=13.28,
-        t=avg_max_min_tmp,
-        ws=wind_speed,
-        svp=pyeto.svp_from_t(avg_max_min_tmp_c),
-        avp=pyeto.avp_from_tmin(min_tmp_c),
-        delta_svp=pyeto.delta_svp(avg_max_min_tmp_c),
-        psy=pyeto.psy_const(grb_one_day['PRES_110_SFC']),
-    )
-    grb_one_day['ET'] = ET
+    et = grb_one_day['WIND_SPEED'][:]
+    rows = et.shape[0]
+    cols = et.shape[1]
+
+
+    for i in range(0, rows):
+        for j in range(0, cols):
+            # calculate avgerage temperature
+            avg_max_min_tmp = (grb_one_day['MAX_TMP_110_HTGL'][i,j] + grb_one_day['MIN_TMP_110_HTGL'][i,j]) / 2
+            if avg_max_min_tmp != "--":
+              print(avg_max_min_tmp)
+              # convert to celcius for later use
+              min_tmp_c = convert.kelvin2celsius(grb_one_day['MIN_TMP_110_HTGL'][i,j])
+              max_tmp_c = convert.kelvin2celsius(grb_one_day['MAX_TMP_110_HTGL'][i,j])
+              avg_max_min_tmp_c = convert.kelvin2celsius(avg_max_min_tmp)
+              sol_dec = pyeto.sol_dec(day_of_year)
+              radlat = pyeto.deg2rad(grb_one_day['lat_110'][i])
+              ird = pyeto.inv_rel_dist_earth_sun(day_of_year)
+              sha = pyeto.sunset_hour_angle(pyeto.deg2rad(grb_one_day['lat_110'][i]), sol_dec)
+              et_rad = pyeto.et_rad(pyeto.deg2rad(grb_one_day['lat_110'][i]), sol_dec, sha, ird)
+              cs_rad = pyeto.cs_rad(altitude, et_rad)
+              no_lw_rad = pyeto.net_out_lw_rad(grb_one_day['MIN_TMP_110_HTGL'][i,j], grb_one_day['MAX_TMP_110_HTGL'][i,j], grb_one_day['DSWRF_110_SFC'][i,j], cs_rad, pyeto.avp_from_tmin(min_tmp_c))
+              net_rad = pyeto.net_rad(grb_one_day['DSWRF_110_SFC'][i,j], no_lw_rad)
+              psy_const= grb_one_day['PRES_110_SFC'][i, j]
+              psy = pyeto.psy_const(psy_const)
+              delta_svp=pyeto.delta_svp(avg_max_min_tmp_c)
+              svp = pyeto.svp_from_t(avg_max_min_tmp_c)
+              avp = pyeto.avp_from_tmin(min_tmp_c)
+              ws = wind_speed[i,j]
+              # et[i,j] = pyeto.fao56_penman_monteith(
+              #      net_rad=net_rad,
+              #      t=avg_max_min_tmp,
+              #      ws=wind_speed,
+              #      svp=pyeto.svp_from_t(avg_max_min_tmp_c),
+              #      avp=pyeto.avp_from_tmin(min_tmp_c),
+              #      delta_svp=pyeto.delta_svp(avg_max_min_tmp_c),
+              #      psy=psy)
+              et[i,j] = (0.408 * (net_rad - 0.0) * delta_svp /(delta_svp + (psy * (1 + 0.34 * ws)))) + (900 * ws / avg_max_min_tmp * (svp - avp) * psy / (delta_svp + (psy * (1 + 0.34 * ws))))
+              print(et[i,j])
+    grb_one_day['ET'] = et
+
+
+    # # calculate avgerage temperature
+     #avg_max_min_tmp = (grb_one_day['MAX_TMP_110_HTGL'] + grb_one_day['MIN_TMP_110_HTGL']) / 2
+    # # convert to celcius for later use
+    # min_tmp_c = convert.kelvin2celsius(grb_one_day['MIN_TMP_110_HTGL'])
+    # max_tmp_c = convert.kelvin2celsius(grb_one_day['MAX_TMP_110_HTGL'])
+    # avg_max_min_tmp_c = convert.kelvin2celsius(avg_max_min_tmp)
+    # sol_dec = pyeto.sol_dec(day_of_year)
+    # radlat = pyeto.deg2rad(grb_one_day['lat_110'])
+    # ird = pyeto.inv_rel_dist_earth_sun(day_of_year)
+    #     sha = pyeto.sunset_hour_angle(pyeto.deg2rad(grb_one_day['lat_110']), sol_dec)
+    # et_rad = pyeto.et_rad(pyeto.deg2rad(grb_one_day['lat_110'][i]), sol_dec, sha, ird)
+    # cs_rad = pyeto.cs_rad(altitude, et_rad)
+    # no_lw_rad = pyeto.net_out_lw_rad(grb_one_day['MIN_TMP_110_HTGL'], grb_one_day['MAX_TMP_110_HTGL'], grb_one_day['DSWRF_110_SFC'], cs_rad, pyeto.avp_from_tmin(min_tmp_c))
+    # net_rad = pyeto.net_rad(grb_one_day['DSWRF_110_SFC'], no_lw_rad)
+    # psy_const= grb_one_day['PRES_110_SFC']
+    # psy = pyeto.psy_const(psy_const)
+    # ET = pyeto.fao56_penman_monteith(
+    #      net_rad=net_rad,
+    #      t=avg_max_min_tmp,
+    #      ws=wind_speed,
+    #      svp=pyeto.svp_from_t(avg_max_min_tmp_c),
+    #      avp=pyeto.avp_from_tmin(min_tmp_c),
+    #      delta_svp=pyeto.delta_svp(avg_max_min_tmp_c),
+    #      psy=psy)
 
     netCDF_data = Dataset("test.nc", "w", format="NETCDF4")
 
@@ -192,6 +245,10 @@ def hourly_to_daily_one_day():
         setattr(netCDF_data.variables['AVG_MAX_MIN_TMP_110_HTGL'], key, value)
     netCDF_data.variables['AVG_MAX_MIN_TMP_110_HTGL'][:] = grb_one_day['AVG_MAX_MIN_TMP_110_HTGL']
 
+    #
+
+
+    #print(et)
     # add 'ET' variable
     netCDF_data.createVariable('ET', 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
     for key, value in nios.variables['TMP_110_HTGL'].attributes.items():
