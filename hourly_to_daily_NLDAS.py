@@ -168,7 +168,7 @@ def hourly_to_daily_one_day(path, year, julianday):
 
 
     #create netCDF file
-    netCDF_data = Dataset(os.path.dirname(__file__) + "/netCDF/" + year + "_" + julianday + ".nc", "w", format="NETCDF4")
+    netCDF_data = Dataset(os.path.dirname(__file__) + "/netCDF/NLDAS_" + year + "_" + julianday + ".nc", "w", format="NETCDF4")
 
     # add dimensions
     lat = netCDF_data.createDimension('lat_110', LAT)
