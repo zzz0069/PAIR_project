@@ -30,7 +30,7 @@ while myDate <= endDate:
 
     for i in range(4):
         for j in range(129):
-            filename = 'gfs_4_' + year + month + day + '_' + str(i*6).zfill(4) + '_' + str(j*3).zfill(3) + '.grb2'
+            filename = 'gfs_4_' + year + month + day + '_' + str(i*6).zfill(2) + '00_' + str(j*3).zfill(3) + '.grb2'
 
             url_list.write('https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day  + '/' + filename + '\n')
 
