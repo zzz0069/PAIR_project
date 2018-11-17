@@ -4,11 +4,11 @@
 ####################################################
 
 
-import hourly_to_daily_NLDAS
+import hourly_to_daily_GFS
 from datetime import date, timedelta
 import os
 
-path = '/hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/'
+path = '/nomads.ncdc.noaa.gov/data/gfs4/'
 
 startDate = date(2018, 1, 1)
 endDate = date(2018, 1, 1)
@@ -35,11 +35,11 @@ while myDate <= endDate:
             url_list.write('https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day  + '/' + filename + '\n')
 
     url_list.close()
-    os.system('wget -x -i filelist.txt')
+    #os.system('wget -x -i filelist.txt')
 
             #print('wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r --content-disposition https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day + '/ -A grb2')
             #os.system('wget -np -r --content-disposition https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day  + '/' + filename)
 
     #create daily averages and output netCDF file
-    #hourly_to_daily_NLDAS.hourly_to_daily_one_day(fullPath, year, julianday)
+    hourly_to_daily_GFS.hourly_to_daily_one_day(fullPath, year, month, day)
     myDate += timedelta(days=1)
