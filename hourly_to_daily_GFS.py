@@ -41,15 +41,15 @@ DAILY_VARNAMES = ['PWAT_P0_L200_GLL0',
                   'lon_0']
 
 
-def grb_file_name_one_day(path, year, month, day, forecast):
+def grb_file_name_one_day(path, year, month, day, forecastInterval):
     file_name_list = []
-    for grb_file in glob.glob(os.path.join(path + year + month + '/' + year + month + day + '/', '*' + forecast + '.grb2')):
+    for grb_file in glob.glob(os.path.join(path + year + month + '/' + year + month + day + '/', '*' + forecastInterval + '.grb2')):
         file_name_list.append(grb_file)
     return file_name_list
 
-def hourly_to_daily_one_day(path, year, month, day, forecast):
+def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
     # Create a grb dict of all variables for one day
-    grbs = grb_file_name_one_day(path, year, month, day, forecast)
+    grbs = grb_file_name_one_day(path, year, month, day, forecastInterval)
     grb_one_day = {}
 
     for grb in grbs:
@@ -102,7 +102,7 @@ def hourly_to_daily_one_day(path, year, month, day, forecast):
     grb_one_day['WIND_SPEED'] = wind_speed
 
     # create netCDF file
-    netCDF_data = Dataset(os.path.dirname(__file__) + "/netCDF/GFS_" + year + month + day + "_" + forecast + ".nc", "w",
+    netCDF_data = Dataset(os.path.dirname(__file__) + "/netCDF/GFS_" + year + month + day + "_" + forecastInterval + ".nc", "w",
                           format="NETCDF4")
 
     # add dimensions

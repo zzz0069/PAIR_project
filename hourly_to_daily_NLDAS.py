@@ -39,11 +39,6 @@ VARIABLE_NAMES = ['PRES_110_SFC',  # Pressure
                    'DSWRF_110_SFC', #Downward Shortwave Radiation
                    'DLWRF_110_SFC'] #Downward Longwave Radiation
 
-# variables that not in new file
-IGNORE_VARNAMES = ['NCRAIN_110_SFC_acc1h',
-                   'CAPE_110_SPDY',
-                   'PEVAP_110_SFC_acc1h']
-
 # varlables that not divide HOURS
 DAILY_VARNAMES = ['A_PCP_110_SFC_acc1h',
                   'MAX_TMP_110_HTGL',
@@ -72,7 +67,7 @@ def hourly_to_daily_one_day(path, year, julianday):
         varNames = nios.variables.keys()
         if grb_one_day == {}:
             for varName in varNames:
-                if varName in IGNORE_VARNAMES:
+                if varName not in VARIABLE_NAMES:
                     continue
                 if varName == 'TMP_110_HTGL':
                     grb_one_day['MAX_%s' % varName] = nios.variables[varName].get_value()
@@ -85,7 +80,7 @@ def hourly_to_daily_one_day(path, year, julianday):
                     grb_one_day['%s' % varName] = nios.variables[varName].get_value()
         else:
             for varName in varNames:
-                if varName in IGNORE_VARNAMES:
+                if varName not in VARIABLE_NAMES:
                     continue
                 if varName == 'TMP_110_HTGL':
                     grb_one_day['MAX_%s' % varName] = np.maximum(nios.variables[varName].get_value(),
@@ -176,7 +171,7 @@ def hourly_to_daily_one_day(path, year, julianday):
 
     # create and assign attr for all variables
     for varName in varNames:
-        if varName in IGNORE_VARNAMES:
+        if varName not in VARIABLE_NAMES:
             continue
         if varName == 'TMP_110_HTGL':
             netCDF_data.createVariable('MAX_%s' % varName, 'f', ('lat_110', 'lon_110'), fill_value=1.0e+20)
