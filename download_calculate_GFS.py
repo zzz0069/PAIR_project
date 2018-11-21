@@ -41,5 +41,6 @@ while myDate <= endDate:
             #os.system('wget -np -r --content-disposition https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day  + '/' + filename)
 
     #create daily averages and output netCDF file
-    hourly_to_daily_GFS.hourly_to_daily_one_day(fullPath, year, month, day)
+    for j in range(129):
+        hourly_to_daily_GFS.hourly_to_daily_one_day(fullPath, year, month, day, str(j*3).zfill(3))
     myDate += timedelta(days=1)
