@@ -7,6 +7,7 @@
 import hourly_to_daily_GFS
 from datetime import date, timedelta
 import os
+import gc
 
 path = '/nomads.ncdc.noaa.gov/data/gfs4/'
 
@@ -24,7 +25,7 @@ while myDate <= endDate:
     julianday = format(tt.tm_yday, '03')
 
     #get current path
-    fullPath = os.path.dirname(__file__) + path
+    fullPath = os.path.dirname(os.path.abspath(__file__)) + path
 
     #call wget to download files for given year/day
     #create a filelist.txt file to contain the files that we need to download
@@ -43,7 +44,7 @@ while myDate <= endDate:
     url_list.close()
 
     #call wget to get all files in filelist.xt
-    os.system('wget -x -i filelist.txt')
+    #os.system('wget -x -i filelist.txt')
 
             #print('wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r --content-disposition https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day + '/ -A grb2')
             #os.system('wget -np -r --content-disposition https://nomads.ncdc.noaa.gov/data/gfs4/' + year + month + '/' + year + month + day  + '/' + filename)
@@ -51,5 +52,8 @@ while myDate <= endDate:
     #create daily averages and output netCDF file
     #loop over all forecast intervals for the given day (000, 003, 006, ....384)
     for j in range(129):
-        hourly_to_daily_GFS.hourly_to_daily_one_day(fullPath, year, month, day, str(j*3).zfill(3))
+        #os.system('python -c "import hourly_to_daily_GFS; hourly_to_daily_GFS.hourly_to_daily_one_day(\'' + fullPath + '\',\'' + year + '\',\'' + month + '\',\'' + day + '\',\'' + str(j*3).zfill(3) + '\')')
+        #print('python hourly_to_daily_GFS.hourly_to_daily_one_day(' + fullPath + ',' + year + ', ' + month + ', ' + day + ', ' + str(j*3).zfill(3) + ')')
+        os.system('python -c "import hourly_to_daily_GFS; hourly_to_daily_GFS.hourly_to_daily_one_day(\'' + fullPath + '\',\'' + year + '\',\'' + month + '\',\'' + day + '\',\'' + str(j*3).zfill(3) + '\')"')
+        gc.collect()
     myDate += timedelta(days=1)

@@ -11,6 +11,7 @@ import os
 import numpy as np
 import glob
 import math
+import gc
 from netCDF4 import Dataset
 
 import pyeto
@@ -26,13 +27,13 @@ VARIABLE_NAMES = ['TMP_P0_L1_GLL0',  # Temperature
                   'UGRD_P0_L104_GLL0',  # u-component of wind
                   'VGRD_P0_L104_GLL0',  # v-component of wind
                   'RH_P0_L200_GLL0',  # Relative     humidity
-                  'PWAT_P0_L200_GLL0',  # Total precipitation
+                  'APCP_P8_L1_GLL0_acc',  # Total precipitation
                   'lat_0',  # latitude
                   'lon_0'] # longitude
 
 
 # varlables that not divide HOURS
-DAILY_VARNAMES = ['PWAT_P0_L200_GLL0',
+DAILY_VARNAMES = ['APCP_P8_L1_GLL0_acc',
                   'MAX_TMP_P0_L1_GLL0',
                   'MIN_TMP_P0_L1_GLL0',
                   'MAX_RH_P0_L200_GLL0',
@@ -47,12 +48,14 @@ def grb_file_name_one_day(path, year, month, day, forecastInterval):
         file_name_list.append(grb_file)
     return file_name_list
 
+
 def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
     # Create a grb dict of all variables for one day
     grbs = grb_file_name_one_day(path, year, month, day, forecastInterval)
     grb_one_day = {}
 
     for grb in grbs:
+        print(grb)
         nios = Nio.open_file(grb, mode='r', options=None, history='', format='')
         varNames = nios.variables.keys()
         if grb_one_day == {}:
@@ -88,8 +91,11 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
                 else:
                     grb_one_day['%s' % varName] += nios.variables[varName].get_value()
 
+
     for key, value in grb_one_day.items():
         if key in DAILY_VARNAMES:
+            continue
+        elif key not in VARIABLE_NAMES:
             continue
         else:
             grb_one_day[key] = value / HOURS
@@ -191,4 +197,13 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
     # 'WIND_SPEED'
     setattr(netCDF_data.variables['WIND_SPEED'], 'long_name', 'Wind speed')
     netCDF_data.close()
+    del grb_one_day
+    del netCDF_data
+    nios.close()
+    del nios
+    del varNames
+    del grbs
+    del nio_vari
+    del grb_attr
+    gc.collect()
     return

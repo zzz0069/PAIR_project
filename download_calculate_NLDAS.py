@@ -25,7 +25,7 @@ while myDate <= endDate:
     julianday = format(tt.tm_yday, '03')
 
     # get current path
-    fullPath = os.path.dirname(__file__) + path
+    fullPath = os.path.dirname(os.path.abspath(__file__)) + path
     #call wget to download files for given year/day
     os.system('wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/' + year + '/' + julianday + '/ -A grb')
 
