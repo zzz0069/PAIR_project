@@ -27,7 +27,7 @@ while myDate <= endDate:
     # get current path
     fullPath = os.path.dirname(os.path.abspath(__file__)) + path
     #call wget to download files for given year/day
-    os.system('wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/' + year + '/' + julianday + '/ -A grb')
+    #os.system('wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/' + year + '/' + julianday + '/ -A grb')
 
     #create daily averages and output netCDF file
     hourly_to_daily_NLDAS.hourly_to_daily_one_day(fullPath, year, julianday)
