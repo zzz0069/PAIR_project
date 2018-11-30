@@ -10,17 +10,9 @@ import Nio
 import os
 import numpy as np
 import glob
-import math
 import gc
 from netCDF4 import Dataset
-
-import pyeto
-from pyeto import convert
-
-
-LAT = 361
-LON = 720
-HOURS = 24
+import common
 
 # variables in original grb file
 VARIABLE_NAMES = ['TMP_P0_L1_GLL0',  # Temperature
@@ -98,7 +90,7 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
         elif key not in VARIABLE_NAMES:
             continue
         else:
-            grb_one_day[key] = value / HOURS
+            grb_one_day[key] = value / common.HOURS
 
     # calculate avgerage temperature
     grb_one_day['AVG_MAX_MIN_TMP_P0_L1_GLL0'] = (grb_one_day['MAX_TMP_P0_L1_GLL0'] + grb_one_day['MIN_TMP_P0_L1_GLL0']) / 2
@@ -112,8 +104,8 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
                           format="NETCDF4")
 
     # add dimensions
-    lat = netCDF_data.createDimension('lat_0', LAT)
-    lon = netCDF_data.createDimension('lon_0', LON)
+    lat = netCDF_data.createDimension('lat_0', common.GFSLatCount)
+    lon = netCDF_data.createDimension('lon_0', common.GFSLonCount)
 
     # create and assign attr for all variables
     for varName in varNames:

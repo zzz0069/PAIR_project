@@ -10,8 +10,7 @@
 import hourly_to_daily_NLDAS
 from datetime import date, timedelta
 import os
-
-path = '/hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/'
+import common
 
 startDate = date(2018, 1, 1)
 endDate = date(2018, 1, 3)
@@ -25,7 +24,7 @@ while myDate <= endDate:
     julianday = format(tt.tm_yday, '03')
 
     # get current path
-    fullPath = os.path.dirname(os.path.abspath(__file__)) + path
+    fullPath = os.path.dirname(os.path.abspath(__file__)) + common.NLDASpath
     #call wget to download files for given year/day
     os.system('wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/' + year + '/' + julianday + '/ -A grb')
 

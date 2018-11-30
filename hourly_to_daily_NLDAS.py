@@ -10,17 +10,10 @@ import Nio
 import os
 import numpy as np
 import glob
-import math
 from netCDF4 import Dataset
-
 import pyeto
 from pyeto import convert
-
-
-altitude = 200
-LAT = 224
-LON = 464
-HOURS = 24
+import common
 
 # variables in original grb file of NLDAS-2 monitor data
 VARIABLE_NAMES = ['PRES_110_SFC',  # Pressure
@@ -102,7 +95,7 @@ def hourly_to_daily_one_day(path, year, julianday):
         if key in DAILY_VARNAMES:
             continue
         else:
-            grb_one_day[key] = value / HOURS
+            grb_one_day[key] = value / common.HOURS
 
     #calculate avgerage temperature
     grb_one_day['AVG_MAX_MIN_TMP_110_HTGL'] = (grb_one_day['MAX_TMP_110_HTGL'] + grb_one_day['MIN_TMP_110_HTGL']) / 2
@@ -138,7 +131,7 @@ def hourly_to_daily_one_day(path, year, julianday):
               #calclate extraterrestrial radiation
               et_rad = pyeto.et_rad(pyeto.deg2rad(grb_one_day['lat_110'][i]), sol_dec, sha, ird)
               #calculate clear sky radiation
-              cs_rad = pyeto.cs_rad(altitude, et_rad)
+              cs_rad = pyeto.cs_rad(common.altitude, et_rad)
               #calculate net outgoing lonwave radation
               no_lw_rad = pyeto.net_out_lw_rad(grb_one_day['MIN_TMP_110_HTGL'][i,j], grb_one_day['MAX_TMP_110_HTGL'][i,j], grb_one_day['DSWRF_110_SFC'][i,j], cs_rad, pyeto.avp_from_tmin(min_tmp_c))
               #calculate net radiation
@@ -166,8 +159,8 @@ def hourly_to_daily_one_day(path, year, julianday):
     netCDF_data = Dataset(os.path.dirname(__file__) + "/netCDF/NLDAS_" + year + "_" + julianday + ".nc", "w", format="NETCDF4")
 
     # add dimensions
-    lat = netCDF_data.createDimension('lat_110', LAT)
-    lon = netCDF_data.createDimension('lon_110', LON)
+    lat = netCDF_data.createDimension('lat_110', common.NLDASLatCount)
+    lon = netCDF_data.createDimension('lon_110', common.NLDASLonCount)
 
     # create and assign attr for all variables
     for varName in varNames:

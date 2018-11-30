@@ -1,24 +1,15 @@
 
 from datetime import date, timedelta
 import os
-import Nio
-import os
 import numpy as np
-import glob
-import math
 from netCDF4 import Dataset
 from pyeto import convert
-
-hotTemp = 20 #degrees celcius
-coldTemp = 0 #degrees celcius
-
-path = '/netCDF/'
-
+import common
 
 #This function will return the netCDF file name for a given date
 def getfilename(querydate):
 
-    fullPath = os.path.dirname(os.path.abspath(__file__)) + path
+    fullPath = os.path.dirname(os.path.abspath(__file__)) + common.netCDFpath
 
     #split out the parts of the year
     year = ("{date.year:04}".format(date=querydate))
@@ -32,7 +23,7 @@ def getfilename(querydate):
 #This function will return an array of netCDF file names for a date range
 def getfilenames(querystartdate, queryenddate):
     file_name_list = []
-    fullPath = os.path.dirname(os.path.abspath(__file__)) + path
+    fullPath = os.path.dirname(os.path.abspath(__file__)) + common.netCDFpath
 
     mydate = querystartdate
 
@@ -184,11 +175,11 @@ def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, va
 
 
 
-#this function will return the consecutive hot or cold days a date range for a
+#this function will return the consecutive hot, cold, wet, or drydays a date range for a
 #single coordinate represented by  lat/lon
-#aggregatefunction can be hot or cold
+#aggregatefunction can be hot, cold, wet, or dry
 #returns a single value
-def queryFileConsecutiveHotColdDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
+def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = 0
@@ -210,16 +201,29 @@ def queryFileConsecutiveHotColdDateRangeSingleCoordinate(querystartdate, queryen
 
         # grab the dataset for the given variable name and rectangle
         dataSubset = ds.variables[variable][latindex, lonindex]
-        dataSubset = convert.kelvin2celsius(dataSubset)
 
         if aggregatefunction == "hot":
-            if dataSubset>=hotTemp:
+            dataSubset = convert.kelvin2celsius(dataSubset)
+            if dataSubset>common.hotTemp:
                 aggregate += 1
             else:
                 aggregate = 0
 
         elif aggregatefunction == "cold":
-            if dataSubset<=coldTemp:
+            dataSubset = convert.kelvin2celsius(dataSubset)
+            if dataSubset<common.coldTemp:
+                aggregate += 1
+            else:
+                aggregate = 0
+
+        elif aggregatefunction == "wet":
+            if dataSubset>common.wetPrecip:
+                aggregate += 1
+            else:
+                aggregate = 0
+
+        elif aggregatefunction == "dry":
+            if dataSubset<common.dryPrecip:
                 aggregate += 1
             else:
                 aggregate = 0
@@ -227,12 +231,12 @@ def queryFileConsecutiveHotColdDateRangeSingleCoordinate(querystartdate, queryen
 
     return aggregate
 
-#this function will return the consecutive hot or cold days a date range for a
+#this function will return the consecutive hot, cold, wet, or dry days a date range for a
 #rectangular area represented by upper and lower lat/lon
 #lat_bounds and lon_boundsshould be an array with 2 variables in radians [lower value, upper value]
-#aggregatefunction can be hot or cold
+#aggregatefunction can be hot, cold, wet, or dry
 #returns a 2d array
-def queryFileConsecutiveHotColdDateRangeRectangle(querystartdate, queryenddate, variable, aggregatefunction, lat_bounds, lon_bounds):
+def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, variable, aggregatefunction, lat_bounds, lon_bounds):
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = []
@@ -270,15 +274,27 @@ def queryFileConsecutiveHotColdDateRangeRectangle(querystartdate, queryenddate, 
         for i in range(0, rows):
             for j in range(0, cols):
 
-                dataSubset[i, j] = convert.kelvin2celsius(dataSubset[i, j])
                 if aggregatefunction == "hot":
-                    if dataSubset[i, j] >= hotTemp:
+                    dataSubset[i, j] = convert.kelvin2celsius(dataSubset[i, j])
+                    if dataSubset[i, j] > common.hotTemp:
                         aggregate[i, j] += 1
                     else:
                         aggregate[i, j] = 0
 
                 elif aggregatefunction == "cold":
-                    if dataSubset[i, j] <= coldTemp:
+                    dataSubset[i, j] = convert.kelvin2celsius(dataSubset[i, j])
+                    if dataSubset[i, j] < common.coldTemp:
+                        aggregate[i, j] += 1
+                    else:
+                        aggregate[i, j] = 0
+                elif aggregatefunction == "wet":
+                    if dataSubset[i, j] > common.wetPrecip:
+                        aggregate[i, j] += 1
+                    else:
+                        aggregate[i, j] = 0
+
+                elif aggregatefunction == "dry":
+                    if dataSubset[i, j] < common.dryPrecip:
                         aggregate[i, j] += 1
                     else:
                         aggregate[i, j] = 0
@@ -288,7 +304,7 @@ def queryFileConsecutiveHotColdDateRangeRectangle(querystartdate, queryenddate, 
 
 
 lat_bnds = [25.0, 26.0]
-lon_bnds = [-108, -107]
+lon_bnds = [-103, -102]
 
 #print(queryFileSingleDateRectangle(date(2018, 1, 1), 'MAX_TMP_110_HTGL', lat_bnds, lon_bnds))
 #print(queryFileSingleDateSingleCoordinate(date(2018, 1, 1), 'MAX_TMP_110_HTGL', 25.063, -107.938))
@@ -301,4 +317,7 @@ lon_bnds = [-108, -107]
 #print(queryFileConsecutiveHotColdDateRangeSingleCoordinate(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', 25.063, -107.938))
 
 
-print(queryFileConsecutiveHotColdDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'hot', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'hot', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'wet', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'dry', lat_bnds, lon_bnds))
