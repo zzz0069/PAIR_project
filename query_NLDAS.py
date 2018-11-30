@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Brad W Vick
+# Created Date: 11/26/2018
+# =============================================================================
+"""
+    The Module contains a set of functions for querying data from the daily
+    NLDAS netCDF files
+
+    Each function has a docstring describing the query it performs
+
+ """
 
 from datetime import date, timedelta
 import os
@@ -6,9 +19,24 @@ from netCDF4 import Dataset
 from pyeto import convert
 import common
 
-#This function will return the netCDF file name for a given date
-def getfilename(querydate):
 
+def getfilename(querydate):
+    """
+    Get a NLDAS netCDF filename
+
+    Will return the name of an NLDAS netCDF file based on the supplied date
+
+    Parameters
+    ----------
+    querydate : date
+        date for the NLDAS file
+
+    Returns
+    -------
+    str
+        NLDAS netCDF filename
+
+    """
     fullPath = os.path.dirname(os.path.abspath(__file__)) + common.netCDFpath
 
     #split out the parts of the year
@@ -20,8 +48,26 @@ def getfilename(querydate):
 
     return fileName
 
-#This function will return an array of netCDF file names for a date range
+
 def getfilenames(querystartdate, queryenddate):
+    """
+    Get an array of NLDAS netCDF filename
+
+    Will return a list of NLDAS netCDF file names based on the supplied date range
+
+    Parameters
+    ----------
+    querystartdate : date
+        start date date for the NLDAS files
+    queryenddate : date
+        end date date for the NLDAS files
+
+    Returns
+    -------
+    str()
+        an array of NLDAS netCDF filenames
+
+    """
     file_name_list = []
     fullPath = os.path.dirname(os.path.abspath(__file__)) + common.netCDFpath
 
@@ -40,11 +86,32 @@ def getfilenames(querystartdate, queryenddate):
 
     return file_name_list
 
-#this function will return a varialbe for a single date for a
-#rectangular area represented by upper and lower lat/lon
-#lat_bounds and lon_boundsshould be an array with 2 variables in radians [lower value, upper value]
-#returns a 2d array
+
 def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
+    """
+    Query for a netCDF variable, single date, rectanglar area
+
+    will return a 2d array of values for the supplied parameters
+
+    Parameters
+    ----------
+    querydate : date
+        date to query
+    variable : str
+        variable to query from the netCDF file
+    lat_bounds : int[]
+        an array with to variables to represent the lower and upper bounds
+        for lat in radians
+    lon_bounds : int[]
+        an array with to variables to represent the lower and upper bounds
+        for lon in radians
+
+    Returns
+    -------
+    float[]
+        an 2d array of results for the query
+
+    """
     ds = Dataset(getfilename(querydate))
 
     #grab the lat and lon variable arrays
@@ -64,10 +131,30 @@ def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
 
     return dataSubset
 
-#this function will return a varialbe for a single date for a
-#single coordinate represented by  lat/lon
-#returns a single value
+
 def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
+    """
+    Query for a netCDF variable, single date, single coordinate
+
+    will return a single values for the supplied parameters
+
+    Parameters
+    ----------
+    querydate : date
+        date to query
+    variable : str
+        variable to query from the netCDF file
+    lat : int
+        lat in radians
+    lon : int
+        lon in radians
+
+    Returns
+    -------
+    float
+        result for the query
+
+    """
     ds = Dataset(getfilename(querydate))
 
     #grab the lat and lon variable arrays
@@ -86,12 +173,36 @@ def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
     return dataSubset
 
 
-#this function will return the maximuum, minimum, or average of a varialbe for a date range for a
-#rectangular area represented by upper and lower lat/lon
-#lat_bounds and lon_boundsshould be an array with 2 variables in radians [lower value, upper value]
-#aggregatefunction can be max, min, or avg
-#returns a 2d array
 def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable, aggregatefunction, lat_bounds, lon_bounds):
+    """
+    Query for a netCDF variable, date range, rectanglar area
+
+    will return a 2d array of values for the supplied parameters
+
+    Parameters
+    ----------
+    querystartdate : date
+        start date for query
+    queryenddate : date
+        end date for query
+    variable : str
+        variable to query from the netCDF file
+    aggregatefunction : str
+        function for aggregating th data possible values: min, max, avg
+    lat_bounds : int[]
+        an array with to variables to represent the lower and upper bounds
+        for lat in radians
+    lon_bounds : int[]
+        an array with to variables to represent the lower and upper bounds
+        for lon in radians
+
+    Returns
+    -------
+    float[]
+        an 2d array of results for the query
+
+    """
+
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = []
@@ -131,11 +242,35 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
 
     return aggregate
 
-#this function will return the maximuum, minimum, or average of a varialbe for a date range for a
-#single coordinate represented by  lat/lon
-#aggregatefunction can be max, min, or avg
-#returns a single value
+
 def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
+    """
+    Query for a netCDF variable, date range, single coordinate
+
+    will return a 2d array of values for the supplied parameters
+
+    Parameters
+    ----------
+    querystartdate : date
+        start date for query
+    queryenddate : date
+        end date for query
+    variable : str
+        variable to query from the netCDF file
+    aggregatefunction : str
+        function for aggregating th data possible values: min, max, avg
+    lat : int
+        lat in radians
+    lon : int
+        lon in radians
+
+    Returns
+    -------
+    float
+        result for the query
+
+    """
+
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = 0
@@ -174,69 +309,36 @@ def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, va
     return aggregate
 
 
-
-#this function will return the consecutive hot, cold, wet, or drydays a date range for a
-#single coordinate represented by  lat/lon
-#aggregatefunction can be hot, cold, wet, or dry
-#returns a single value
-def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
-    file_name_list = getfilenames(querystartdate, queryenddate)
-
-    aggregate = 0
-
-    filecount = 0
-    for filename in file_name_list:
-        filecount += 1
-        ds = Dataset(filename)
-
-        #grab the lat and lon variable arrays
-        lats = ds.variables['lat_110'][:]
-        lons = ds.variables['lon_110'][:]
-
-        # calculate the lower and upper indicies of the lat array
-        latindex = np.nonzero(lats == lat)[0][0]
-
-        # calculate the lower and upper indices of the lon array
-        lonindex = np.nonzero(lons == lon)[0][0]
-
-        # grab the dataset for the given variable name and rectangle
-        dataSubset = ds.variables[variable][latindex, lonindex]
-
-        if aggregatefunction == "hot":
-            dataSubset = convert.kelvin2celsius(dataSubset)
-            if dataSubset>common.hotTemp:
-                aggregate += 1
-            else:
-                aggregate = 0
-
-        elif aggregatefunction == "cold":
-            dataSubset = convert.kelvin2celsius(dataSubset)
-            if dataSubset<common.coldTemp:
-                aggregate += 1
-            else:
-                aggregate = 0
-
-        elif aggregatefunction == "wet":
-            if dataSubset>common.wetPrecip:
-                aggregate += 1
-            else:
-                aggregate = 0
-
-        elif aggregatefunction == "dry":
-            if dataSubset<common.dryPrecip:
-                aggregate += 1
-            else:
-                aggregate = 0
-
-
-    return aggregate
-
-#this function will return the consecutive hot, cold, wet, or dry days a date range for a
-#rectangular area represented by upper and lower lat/lon
-#lat_bounds and lon_boundsshould be an array with 2 variables in radians [lower value, upper value]
-#aggregatefunction can be hot, cold, wet, or dry
-#returns a 2d array
 def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, variable, aggregatefunction, lat_bounds, lon_bounds):
+    """
+    Query for number of consecutive days for a given netCDF variable, date range, cunction, rectanglar area
+
+    will return a 2d array of values for the supplied parameters
+
+    Parameters
+    ----------
+    querystartdate : date
+        start date for query
+    queryenddate : date
+        end date for query
+    variable : str
+        variable to query from the netCDF file
+    aggregatefunction : str
+        function for calculating concecutive days, possible values: cold, hot, wet, dry
+    lat_bounds : int[]
+        an array with to variables to represent the lower and upper bounds
+        for lat in radians
+    lon_bounds : int[]
+        an array with to variables to represent the lower and upper bounds
+        for lon in radians
+
+    Returns
+    -------
+    float[]
+        an 2d array of results for the query
+
+    """
+
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = []
@@ -302,6 +404,85 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
 
     return aggregate
 
+
+def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
+    """
+    Query for number of consecutive days for a given netCDF variable, date range, cunction, single coordinate
+
+    will return a 2d array of values for the supplied parameters
+
+    Parameters
+    ----------
+    querystartdate : date
+        start date for query
+    queryenddate : date
+        end date for query
+    variable : str
+        variable to query from the netCDF file
+    aggregatefunction : str
+        function for calculating concecutive days, possible values: cold, hot, wet, dry
+    lat : int
+        lat in radians
+    lon : int
+        lon in radians
+
+    Returns
+    -------
+    float
+        result for the query
+
+    """
+
+    file_name_list = getfilenames(querystartdate, queryenddate)
+
+    aggregate = 0
+
+    filecount = 0
+    for filename in file_name_list:
+        filecount += 1
+        ds = Dataset(filename)
+
+        #grab the lat and lon variable arrays
+        lats = ds.variables['lat_110'][:]
+        lons = ds.variables['lon_110'][:]
+
+        # calculate the lower and upper indicies of the lat array
+        latindex = np.nonzero(lats == lat)[0][0]
+
+        # calculate the lower and upper indices of the lon array
+        lonindex = np.nonzero(lons == lon)[0][0]
+
+        # grab the dataset for the given variable name and rectangle
+        dataSubset = ds.variables[variable][latindex, lonindex]
+
+        if aggregatefunction == "hot":
+            dataSubset = convert.kelvin2celsius(dataSubset)
+            if dataSubset>common.hotTemp:
+                aggregate += 1
+            else:
+                aggregate = 0
+
+        elif aggregatefunction == "cold":
+            dataSubset = convert.kelvin2celsius(dataSubset)
+            if dataSubset<common.coldTemp:
+                aggregate += 1
+            else:
+                aggregate = 0
+
+        elif aggregatefunction == "wet":
+            if dataSubset>common.wetPrecip:
+                aggregate += 1
+            else:
+                aggregate = 0
+
+        elif aggregatefunction == "dry":
+            if dataSubset<common.dryPrecip:
+                aggregate += 1
+            else:
+                aggregate = 0
+
+
+    return aggregate
 
 lat_bnds = [25.0, 26.0]
 lon_bnds = [-103, -102]

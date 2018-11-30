@@ -1,10 +1,14 @@
-####################################################
-# 1. Create a grb dict of all variables for one day#
-# 2. Calculate daily aggregates                    #
-# 3. Calculate et                                  #
-# 4. Create empty netCDF file 					   #
-# 5. write all data to  netCDF file 			   #
-####################################################
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Zheng Zhang/Brad W. Vick
+# Created Date: 10/23/2018
+# =============================================================================
+"""
+    The Module contains functions for creating a daily aggregate netCDF file
+    from 1 hour average interval NLDAS GRB files
+
+ """
 
 import Nio
 import os
@@ -44,6 +48,27 @@ DAILY_VARNAMES = ['A_PCP_110_SFC_acc1h',
 
 
 def grb_file_name_one_day(path, year, julianday):
+    """
+    Get an array of NLDAS GRB filenames for the given date
+
+    Will return a list of GFS GRB file names based on the supplied date
+
+
+    Parameters
+    ----------
+    path : str
+        path to location of GRB files
+    year : int
+        year to search for files
+    julianday : int
+        julian day of ear to search for files
+
+    Returns
+    -------
+    str()
+        an array of NLDAS GRB filenames
+
+    """
     file_name_list = []
     for grb_file in glob.glob(os.path.join(path + year + '/' + julianday + '/', '*.grb')):
         file_name_list.append(grb_file)
@@ -51,13 +76,44 @@ def grb_file_name_one_day(path, year, julianday):
 
 
 def hourly_to_daily_one_day(path, year, julianday):
+    """
+    Create a daily aggregate netCDF file for a days worth of GRB files
+
+    Will result in a group of hourly GRB files being aggregated to a single daily netCDF file
+
+    Basic Steps:
+        1. Create a grb dict of all variables for one day
+        2. Calculate daily aggregates
+        3. Calculate ET
+        4. Create empty netCDF file
+        5. write all aggregate data to  netCDF file
+
+    Parameters
+    ----------
+    path : str
+        path to location of GRB files
+    year : int
+        year to aggregate
+    julianday : int
+        julian day of year to aggregate
+
+    Returns
+    -------
+    nothing
+
+    """
+
     # Create a grb dict of all variables for one day
     grbs = grb_file_name_one_day(path, year, julianday)
     grb_one_day = {}
 
+    #loop over grb files
     for grb in grbs:
+        #open grb file using nios
         nios = Nio.open_file(grb, mode='r', options=None, history='', format='')
         varNames = nios.variables.keys()
+
+        #aggregate daily data
         if grb_one_day == {}:
             for varName in varNames:
                 if varName not in VARIABLE_NAMES:
@@ -91,6 +147,7 @@ def hourly_to_daily_one_day(path, year, julianday):
                 else:
                     grb_one_day['%s' % varName] += nios.variables[varName].get_value()
 
+    #create averages
     for key, value in grb_one_day.items():
         if key in DAILY_VARNAMES:
             continue
@@ -254,14 +311,3 @@ def hourly_to_daily_one_day(path, year, julianday):
     netCDF_data.close()
     return
 
-
-
-#print(hourly_to_daily_one_day('2018','001'))
-
-
-def netCDF_daily_file_one_year():
-    pass
-
-
-def netCDF_daily_file_all_year(start_year, end_year):
-    pass

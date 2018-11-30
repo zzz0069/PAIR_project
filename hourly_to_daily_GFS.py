@@ -1,10 +1,14 @@
-####################################################
-# 1. Create a grb dict of all variables for one day#
-# 2. Calculate daily aggregates                    #
-# 3. Calculate et                                  #
-# 4. Create empty netCDF file 					   #
-# 5. write all data to  netCDF file 			   #
-####################################################
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Brad W Vick
+# Created Date: 11/16/2018
+# =============================================================================
+"""
+    The Module contains functions for creating a daily aggregate netCDF file
+    from 6 hour average interval GFS GRB files
+
+ """
 
 import Nio
 import os
@@ -14,7 +18,7 @@ import gc
 from netCDF4 import Dataset
 import common
 
-# variables in original grb file
+# variables in original grb file that we want to aggregate
 VARIABLE_NAMES = ['TMP_P0_L1_GLL0',  # Temperature
                   'UGRD_P0_L104_GLL0',  # u-component of wind
                   'VGRD_P0_L104_GLL0',  # v-component of wind
@@ -35,6 +39,31 @@ DAILY_VARNAMES = ['APCP_P8_L1_GLL0_acc',
 
 
 def grb_file_name_one_day(path, year, month, day, forecastInterval):
+    """
+    Get an array of GFS GRB filenames for the given date and forecast interval
+
+    Will return a list of GFS GRB file names based on the supplied date and forecast interval
+
+
+    Parameters
+    ----------
+    path : str
+        path to location of GRB files
+    year : int
+        year to search for files
+    month : int
+        month to search for files
+    day : int
+        day to search for files
+    forecastInterval : int
+        forcast interval to search for files
+
+    Returns
+    -------
+    str()
+        an array of GFS GRB filenames
+
+    """
     file_name_list = []
     for grb_file in glob.glob(os.path.join(path + year + month + '/' + year + month + day + '/', '*' + forecastInterval + '.grb2')):
         file_name_list.append(grb_file)
@@ -42,14 +71,45 @@ def grb_file_name_one_day(path, year, month, day, forecastInterval):
 
 
 def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
+    """
+    Create a daily aggregate netCDF file for a days worth of GRB files
+
+    Will result in a group of 6 hour interval GRB files being aggregated to a single daily  netCDF file
+
+    Basic Steps:
+        1. Create a grb dict of all variables for one day
+        2. Calculate daily aggregates
+        3. Create empty netCDF file
+        4. write all aggregate data to  netCDF file
+
+    Parameters
+    ----------
+    path : str
+        path to location of GRB files
+    year : int
+        year to aggregate
+    month : int
+        month to aggregate
+    day : int
+        day to aggregate
+    forecastInterval : int
+        forcast interval to aggregate
+
+    Returns
+    -------
+    nothing
+
+    """
     # Create a grb dict of all variables for one day
     grbs = grb_file_name_one_day(path, year, month, day, forecastInterval)
     grb_one_day = {}
 
+    #loop over all grb files
     for grb in grbs:
-        print(grb)
+        #use nios to open the grb file
         nios = Nio.open_file(grb, mode='r', options=None, history='', format='')
         varNames = nios.variables.keys()
+        #aggregate to daily values
         if grb_one_day == {}:
             for varName in varNames:
                 if varName not in VARIABLE_NAMES:
@@ -84,6 +144,7 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
                     grb_one_day['%s' % varName] += nios.variables[varName].get_value()
 
 
+    #create averages
     for key, value in grb_one_day.items():
         if key in DAILY_VARNAMES:
             continue
