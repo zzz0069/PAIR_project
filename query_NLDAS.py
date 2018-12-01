@@ -10,6 +10,24 @@
 
     Each function has a docstring describing the query it performs
 
+    variables included in the NLDAS netCDF file:
+        Name                        Description                             Units
+        A_PCP_110_SFC_acc1h         Total Precipitation                     kg/m^2
+        AVG_MAX_MIN_TMP_110_HTGL    Avg of Min/Max Temp                     k
+        DLWRF_110_SFC               Avg Downward longwave radiation flux    W/m^2
+        DSWRF_110_SFC               Avg Downward shortwave radiation flux   W/m^2
+        ET                          Avg reference evapotranspiration        mm
+        MAX_SPF_H_110_HTGL          Maximum specific humidity               kg/kg
+        MIN_SPF_H_110_HTGL          Minimum specific humidity               kg/kg
+        MAX_TMP_110_HTGL            Maximum temperature                     k
+        MIN_TMP_110_HTGL            Minimum temperature                     k
+        PRES_110_SFC                Avg Pressure                            Pa
+        U_GRD_110_HTGL              Avg u-component of wind                 m/s
+        V_GRD_110_HTGL              Avg v-component of wind                 m/s
+        WIND_SPEED                  Avg Wind Speed                          m/s
+        lat_110                     Lattitude                               radians
+        lon_110                     Longitude                               radians
+
  """
 
 from datetime import date, timedelta
@@ -108,11 +126,14 @@ def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
 
     Returns
     -------
-    float[]
-        an 2d array of results for the query
+    tuple[]
+        0 index is a tuple of lats included in the query
+        1 index is a tuple of lons included in the query
+        2 index is a tuple of numeric results
 
     """
     ds = Dataset(getfilename(querydate))
+    returnTuple = []
 
     #grab the lat and lon variable arrays
     lats = ds.variables['lat_110'][:]
@@ -126,10 +147,25 @@ def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
     lonlowerindex = np.argmin(np.abs(lons - lon_bounds[0]))
     lonupperindex = np.argmin(np.abs(lons - lon_bounds[1]))
 
+    #populate the tuple of lats included in the query
+    returnLatTuple = []
+    for i in range(latlowerindex, latupperindex):
+        returnLatTuple.append(lats[i])
+
+    #populate the tuple of lons included in the query
+    returnLonTuple = []
+    for i in range(lonlowerindex, lonupperindex):
+        returnLonTuple.append(lons[i])
+
     #grab the dataset for the given variable name and rectangle
     dataSubset = ds.variables[variable][latlowerindex:latupperindex, lonlowerindex:lonupperindex]
 
-    return dataSubset
+    returnTuple.append(returnLatTuple)
+    returnTuple.append(returnLonTuple)
+    returnTuple.append(dataSubset)
+
+
+    return returnTuple
 
 
 def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
@@ -198,14 +234,17 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
 
     Returns
     -------
-    float[]
-        an 2d array of results for the query
+    tuple[]
+        0 index is a tuple of lats included in the query
+        1 index is a tuple of lons included in the query
+        2 index is a tuple of numeric results
 
     """
 
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = []
+    returnTuple = []
 
     filecount = 0
     for filename in file_name_list:
@@ -224,6 +263,16 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
         lonlowerindex = np.argmin(np.abs(lons - lon_bounds[0]))
         lonupperindex = np.argmin(np.abs(lons - lon_bounds[1]))
 
+        #populate the tuple of lats included in the query
+        returnLatTuple = []
+        for i in range(latlowerindex, latupperindex):
+            returnLatTuple.append(lats[i])
+
+        #populate the tuple of lons included in the query
+        returnLonTuple = []
+        for i in range(lonlowerindex, lonupperindex):
+            returnLonTuple.append(lons[i])
+
         #grab the dataset for the given variable name and rectangle
         dataSubset = ds.variables[variable][latlowerindex:latupperindex, lonlowerindex:lonupperindex]
 
@@ -240,7 +289,11 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
     if aggregatefunction == "avg":
         aggregate = aggregate / filecount
 
-    return aggregate
+    returnTuple.append(returnLatTuple)
+    returnTuple.append(returnLonTuple)
+    returnTuple.append(aggregate)
+
+    return returnTuple
 
 
 def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
@@ -334,14 +387,17 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
 
     Returns
     -------
-    float[]
-        an 2d array of results for the query
+    tuple[]
+        0 index is a tuple of lats included in the query
+        1 index is a tuple of lons included in the query
+        2 index is a tuple of numeric results
 
     """
 
     file_name_list = getfilenames(querystartdate, queryenddate)
 
     aggregate = []
+    returnTuple = []
     firstLoop = 0
 
     filecount = 0
@@ -360,6 +416,16 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
         #calculate the lower and upper indices of the lon array
         lonlowerindex = np.argmin(np.abs(lons - lon_bounds[0]))
         lonupperindex = np.argmin(np.abs(lons - lon_bounds[1]))
+
+        #populate the tuple of lats included in the query
+        returnLatTuple = []
+        for i in range(latlowerindex, latupperindex):
+            returnLatTuple.append(lats[i])
+
+        #populate the tuple of lons included in the query
+        returnLonTuple = []
+        for i in range(lonlowerindex, lonupperindex):
+            returnLonTuple.append(lons[i])
 
         #grab the dataset for the given variable name and rectangle
         dataSubset = ds.variables[variable][latlowerindex:latupperindex, lonlowerindex:lonupperindex]
@@ -401,8 +467,11 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
                     else:
                         aggregate[i, j] = 0
 
+    returnTuple.append(returnLatTuple)
+    returnTuple.append(returnLonTuple)
+    returnTuple.append(aggregate)
 
-    return aggregate
+    return returnTuple
 
 
 def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
@@ -487,7 +556,7 @@ def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate,
 lat_bnds = [25.0, 26.0]
 lon_bnds = [-103, -102]
 
-#print(queryFileSingleDateRectangle(date(2018, 1, 1), 'MAX_TMP_110_HTGL', lat_bnds, lon_bnds))
+print(queryFileSingleDateRectangle(date(2018, 1, 1), 'MAX_TMP_110_HTGL', lat_bnds, lon_bnds))
 #print(queryFileSingleDateSingleCoordinate(date(2018, 1, 1), 'MAX_TMP_110_HTGL', 25.063, -107.938))
 
 #print(queryFileAggregateDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'avg', lat_bnds, lon_bnds))
@@ -498,7 +567,7 @@ lon_bnds = [-103, -102]
 #print(queryFileConsecutiveHotColdDateRangeSingleCoordinate(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', 25.063, -107.938))
 
 
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'hot', lat_bnds, lon_bnds))
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', lat_bnds, lon_bnds))
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'wet', lat_bnds, lon_bnds))
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'dry', lat_bnds, lon_bnds))
+#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'hot', lat_bnds, lon_bnds))
+#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', lat_bnds, lon_bnds))
+#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'wet', lat_bnds, lon_bnds))
+#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'dry', lat_bnds, lon_bnds))

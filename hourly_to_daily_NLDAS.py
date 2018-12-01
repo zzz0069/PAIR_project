@@ -26,15 +26,10 @@ VARIABLE_NAMES = ['PRES_110_SFC',  # Pressure
                   'V_GRD_110_HTGL',  # v-component of wind
                   'SPF_H_110_HTGL',  # Specific humidity
                   'A_PCP_110_SFC_acc1h',  # Total precipitation
-                  'NCRAIN_110_SFC_acc1h',  # Number concentration for rain particles
-                  'CAPE_110_SPDY',  # Convective available potential energy
                   'DSWRF_110_SFC',  # Downward shortwave radiation flux
                   'DLWRF_110_SFC',  # Downward longwave radiation flux
-                  'PEVAP_110_SFC_acc1h',  # Potential evaporation
                   'lat_110',  # latitude
-                  'lon_110', # longitude
-                   'DSWRF_110_SFC', #Downward Shortwave Radiation
-                   'DLWRF_110_SFC'] #Downward Longwave Radiation
+                  'lon_110'] # longitude
 
 # varlables that not divide HOURS
 DAILY_VARNAMES = ['A_PCP_110_SFC_acc1h',
@@ -291,6 +286,7 @@ def hourly_to_daily_one_day(path, year, julianday):
     # 'A_PCP_110_SFC_acc1h'
     setattr(netCDF_data.variables['AVG_MAX_MIN_TMP_110_HTGL'], 'long_name', 'Average of max and min temperture')
     setattr(netCDF_data.variables['ET'], 'long_name', 'reference evapotranspiration')
+    setattr(netCDF_data.variables['ET'], 'units', 'mm')
     # 'AVG_MAX_MIN_TMP_110_HTGL'
     # 'lat_110'
     # 'lon_110'
@@ -307,7 +303,8 @@ def hourly_to_daily_one_day(path, year, julianday):
     # 'U_GRD_110_HTGL'
     # 'V_GRD_110_HTGL'
     # 'WIND_SPEED'
-    setattr(netCDF_data.variables['WIND_SPEED'], 'long_name', 'Wind speed')
+    setattr(netCDF_data.variables['WIND_SPEED'], 'long_name', 'Avg Wind speed')
+    setattr(netCDF_data.variables['WIND_SPEED'], 'units', 'Avg Wind speed')
     netCDF_data.close()
     return
 
