@@ -567,8 +567,8 @@ def queryFileConsecutivedDateRangeSingleCoordinate(querydate, days, variable, ag
 
 
 
-lat_bnds = [25.0, 26.0]
-lon_bnds = [-103, -102]
+lat_bnds = [20.0, 26.0]
+lon_bnds = [-110, -102]
 
 #print(queryFileSingleDateRectangle(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', lat_bnds, lon_bnds))
 #print(queryFileSingleDateSingleCoordinate(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', 25, -107))
