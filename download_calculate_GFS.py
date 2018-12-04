@@ -65,7 +65,7 @@ while myDate <= endDate:
     url_list.close()
 
     #call wget to get all files in filelist.xt
-    os.system('wget -x -i filelist.txt')
+    #os.system('wget -x -i filelist.txt')
 
     #create daily averages and output netCDF file
     #loop over all forecast intervals for the given day (000, 003, 006, ....384)

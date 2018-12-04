@@ -8,6 +8,8 @@
     The Module contains functions for creating a daily aggregate netCDF file
     from 6 hour average interval GFS GRB files
 
+"VAR_0-1-8_L1_I3_Hour_S1";
+V AR_0-1-8_L1_I6_Hour_S1
  """
 
 import Nio
@@ -23,7 +25,7 @@ VARIABLE_NAMES = ['TMP_P0_L1_GLL0',  # Temperature
                   'UGRD_P0_L104_GLL0',  # u-component of wind
                   'VGRD_P0_L104_GLL0',  # v-component of wind
                   'RH_P0_L200_GLL0',  # Relative     humidity
-                  'APCP_P8_L1_GLL0_acc',  # Total precipitation
+                  'APCP_P8_L1_GLL0_acc6h',  # Total precipitation
                   'lat_0',  # latitude
                   'lon_0'] # longitude
 
@@ -106,6 +108,7 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
 
     #loop over all grb files
     for grb in grbs:
+        print(grb)
         #use nios to open the grb file
         nios = Nio.open_file(grb, mode='r', options=None, history='', format='')
         varNames = nios.variables.keys()
@@ -260,3 +263,10 @@ def hourly_to_daily_one_day(path, year, month, day, forecastInterval):
     del grb_attr
     gc.collect()
     return
+
+
+#fullPath = os.path.dirname(os.path.abspath(__file__)) + common.GFSpath
+
+#nios = Nio.open_file(fullPath + '201801/20180101/gfs_4_20180101_0000_024.grb2', mode='r', options=None, history='', format='')
+#varNames = nios.variables.keys()
+#print(varNames)

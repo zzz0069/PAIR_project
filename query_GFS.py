@@ -6,29 +6,25 @@
 # =============================================================================
 """
     The Module contains a set of functions for querying data from the daily
-    NLDAS netCDF files
+    GFS netCDF files
 
-    NLDAS data is historical
+    GFS data is future forecasting data
 
     Each function has a docstring describing the query it performs
 
     variables included in the NLDAS netCDF file:
         Name                        Description                             Units
-        A_PCP_110_SFC_acc1h         Total Precipitation                     kg/m^2
-        AVG_MAX_MIN_TMP_110_HTGL    Avg of Min/Max Temp                     k
-        DLWRF_110_SFC               Avg Downward longwave radiation flux    W/m^2
-        DSWRF_110_SFC               Avg Downward shortwave radiation flux   W/m^2
-        ET                          Avg reference evapotranspiration        mm
-        MAX_SPF_H_110_HTGL          Maximum specific humidity               kg/kg
-        MIN_SPF_H_110_HTGL          Minimum specific humidity               kg/kg
-        MAX_TMP_110_HTGL            Maximum temperature                     k
-        MIN_TMP_110_HTGL            Minimum temperature                     k
-        PRES_110_SFC                Avg Pressure                            Pa
-        U_GRD_110_HTGL              Avg u-component of wind                 m/s
-        V_GRD_110_HTGL              Avg v-component of wind                 m/s
+        APCP_P8_L1_GLL0_acc6h       Total Precipitation                     kg/m^2
+        AVG_MAX_MIN_TMP_P0_L1_GLL0  Avg of Min/Max Temp                     k
+        MAX_RH_P0_L200_GLL0         Maximum relative humidity               %
+        MIN_RH_P0_L200_GLL0         Minimum specific humidity               %
+        MAX_TMP_P0_L1_GLL0          Maximum temperature                     k
+        MIN_TMP_P0_L1_GLL0          Minimum temperature                     k
+        UGRD_P0_L104_GLL0           Avg u-component of wind                 m/s
+        VGRD_P0_L104_GLL0           Avg v-component of wind                 m/s
         WIND_SPEED                  Avg Wind Speed                          m/s
-        lat_110                     Lattitude                               radians
-        lon_110                     Longitude                               radians
+        lat_0                       Lattitude                               radians
+        lon_0                       Longitude                               radians
 
  """
 
@@ -39,77 +35,76 @@ from netCDF4 import Dataset
 from pyeto import convert
 import common
 
-
-def getfilename(querydate):
+def getfilename(querydate, forecastinterval):
     """
-    Get a NLDAS netCDF filename
+    Get a GFS netCDF filename
 
-    Will return the name of an NLDAS netCDF file based on the supplied date
+    Will return the name of an GFS netCDF file based on the supplied date and forecast interval (hours)
 
     Parameters
     ----------
     querydate : date
-        date for the NLDAS file
+        date for the GFS file
+    forecastinterval : int
+        number of hours in the future to forecast
 
     Returns
     -------
     str
-        NLDAS netCDF filename
+        GFS netCDF filename
 
     """
     fullPath = os.path.dirname(os.path.abspath(__file__)) + common.netCDFpath
 
     #split out the parts of the year
     year = ("{date.year:04}".format(date=querydate))
-    tt = querydate.timetuple()
-    julianday = format(tt.tm_yday, '03')
+    month = ("{date.month:02}".format(date=querydate))
+    day = ("{date.day:02}".format(date=querydate))
+    hour = str(forecastinterval).zfill(3)
 
-    fileName = fullPath + "NLDAS_" + year + "_" + julianday + ".nc"
+    fileName = fullPath + "GFS_" + year + month + day + "_" + hour + ".nc"
 
     return fileName
 
 
-def getfilenames(querystartdate, queryenddate):
+def getfilenames(querydate, days):
     """
-    Get an array of NLDAS netCDF filename
+    Get an array of GFS netCDF filename
 
-    Will return a list of NLDAS netCDF file names based on the supplied date range
+    Will return a list of GFS netCDF file names based on the supplied start date and number of days forecast
 
     Parameters
     ----------
     querystartdate : date
         start date date for the NLDAS files
-    queryenddate : date
-        end date date for the NLDAS files
+    days : int
+        number of days to forecast
 
     Returns
     -------
     str()
-        an array of NLDAS netCDF filenames
+        an array of GFS netCDF filenames
 
     """
     file_name_list = []
     fullPath = os.path.dirname(os.path.abspath(__file__)) + common.netCDFpath
 
-    mydate = querystartdate
+    #split out the parts of the year
+    year = ("{date.year:04}".format(date=querydate))
+    month = ("{date.month:02}".format(date=querydate))
+    day = ("{date.day:02}".format(date=querydate))
 
-    while mydate <= queryenddate:
-        #split out the parts of the year
-        year = ("{date.year:04}".format(date=mydate))
-        tt = mydate.timetuple()
-        julianday = format(tt.tm_yday, '03')
-
-        fileName = fullPath + "NLDAS_" + year + "_" + julianday + ".nc"
-
+    for i in range(1, days):
+        hour = str(i * 24).zfill(3)
+        fileName = fullPath + "GFS_" + year + month + day + "_" + hour + ".nc"
         file_name_list.append(fileName)
-        mydate += timedelta(days=1)
 
     return file_name_list
 
 
-def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
+def queryFileSingleDateRectangle(querydate, forecastinterval, variable, lat_bounds, lon_bounds):
     """
-    Query for a netCDF variable, single date, rectanglar area
+    Query for a GFS variable, single date/forecast interval, rectanglar area
 
     will return a 2d array of values for the supplied parameters
 
@@ -117,6 +112,8 @@ def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
     ----------
     querydate : date
         date to query
+    forecastinterval : int
+        number of hours in the future to forecast
     variable : str
         variable to query from the netCDF file
     lat_bounds : int[]
@@ -134,16 +131,20 @@ def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
         2 index is a tuple of numeric results
 
     """
-    ds = Dataset(getfilename(querydate))
+    ds = Dataset(getfilename(querydate, forecastinterval))
     returnTuple = []
 
     #grab the lat and lon variable arrays
-    lats = ds.variables['lat_110'][:]
-    lons = ds.variables['lon_110'][:]
+    lats = ds.variables['lat_0'][:]
+    lons = ds.variables['lon_0'][:]
+    lons = np.mod(lons - 180.0, 360.0) - 180.0
+
 
     #calculate the lower and upper indicies of the lat array
     latlowerindex = np.argmin(np.abs(lats - lat_bounds[0]))
     latupperindex = np.argmin(np.abs(lats - lat_bounds[1]))
+    if latupperindex<latlowerindex:
+        latlowerindex, latupperindex = latupperindex, latlowerindex
 
     #calculate the lower and upper indices of the lon array
     lonlowerindex = np.argmin(np.abs(lons - lon_bounds[0]))
@@ -169,10 +170,9 @@ def queryFileSingleDateRectangle(querydate, variable, lat_bounds, lon_bounds):
 
     return returnTuple
 
-
-def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
+def queryFileSingleDateSingleCoordinate(querydate, forecastinterval, variable, lat, lon):
     """
-    Query for a netCDF variable, single date, single coordinate
+    Query for a GFS variable, single date/forecast, single coordinate
 
     will return a single values for the supplied parameters
 
@@ -180,6 +180,8 @@ def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
     ----------
     querydate : date
         date to query
+    forecastinterval : int
+        number of hours in the future to forecast
     variable : str
         variable to query from the netCDF file
     lat : int
@@ -193,11 +195,12 @@ def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
         result for the query
 
     """
-    ds = Dataset(getfilename(querydate))
+    ds = Dataset(getfilename(querydate, forecastinterval))
 
     #grab the lat and lon variable arrays
-    lats = ds.variables['lat_110'][:]
-    lons = ds.variables['lon_110'][:]
+    lats = ds.variables['lat_0'][:]
+    lons = ds.variables['lon_0'][:]
+    lons = np.mod(lons - 180.0, 360.0) - 180.0
 
     #calculate the lower and upper indicies of the lat array
     latindex = np.nonzero(lats == lat)[0][0]
@@ -210,19 +213,18 @@ def queryFileSingleDateSingleCoordinate(querydate, variable, lat, lon):
 
     return dataSubset
 
-
-def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable, aggregatefunction, lat_bounds, lon_bounds):
+def queryFileAggregateDateRangeRectangle(querydate, days, variable, aggregatefunction, lat_bounds, lon_bounds):
     """
-    Query for a netCDF variable, date range, rectanglar area
+    Query for a GFS variable, date, number of forecast days, rectanglar area
 
     will return a 2d array of values for the supplied parameters
 
     Parameters
     ----------
-    querystartdate : date
-        start date for query
-    queryenddate : date
-        end date for query
+    querydate : date
+        date for query
+    days : int
+        number of days to forecast
     variable : str
         variable to query from the netCDF file
     aggregatefunction : str
@@ -243,7 +245,7 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
 
     """
 
-    file_name_list = getfilenames(querystartdate, queryenddate)
+    file_name_list = getfilenames(querydate, days)
 
     aggregate = []
     returnTuple = []
@@ -254,12 +256,15 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
         ds = Dataset(filename)
 
         #grab the lat and lon variable arrays
-        lats = ds.variables['lat_110'][:]
-        lons = ds.variables['lon_110'][:]
+        lats = ds.variables['lat_0'][:]
+        lons = ds.variables['lon_0'][:]
+        lons = np.mod(lons - 180.0, 360.0) - 180.0
 
         #calculate the lower and upper indicies of the lat array
         latlowerindex = np.argmin(np.abs(lats - lat_bounds[0]))
         latupperindex = np.argmin(np.abs(lats - lat_bounds[1]))
+        if latupperindex<latlowerindex:
+            latlowerindex, latupperindex = latupperindex, latlowerindex
 
         #calculate the lower and upper indices of the lon array
         lonlowerindex = np.argmin(np.abs(lons - lon_bounds[0]))
@@ -298,18 +303,18 @@ def queryFileAggregateDateRangeRectangle(querystartdate, queryenddate, variable,
     return returnTuple
 
 
-def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
+def queryFileAggregateDateRangeSingleCoordinate(querydate, days, variable, aggregatefunction, lat, lon):
     """
-    Query for a netCDF variable, date range, single coordinate
+    Query for a GFS variable, date, number of forecast days, single coordinate
 
     will return a 2d array of values for the supplied parameters
 
     Parameters
     ----------
-    querystartdate : date
-        start date for query
-    queryenddate : date
-        end date for query
+    querydate : date
+        date for query
+    days : int
+        number of days to forecast
     variable : str
         variable to query from the netCDF file
     aggregatefunction : str
@@ -326,7 +331,7 @@ def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, va
 
     """
 
-    file_name_list = getfilenames(querystartdate, queryenddate)
+    file_name_list = getfilenames(querydate, days)
 
     aggregate = 0
 
@@ -336,8 +341,9 @@ def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, va
         ds = Dataset(filename)
 
         #grab the lat and lon variable arrays
-        lats = ds.variables['lat_110'][:]
-        lons = ds.variables['lon_110'][:]
+        lats = ds.variables['lat_0'][:]
+        lons = ds.variables['lon_0'][:]
+        lons = np.mod(lons - 180.0, 360.0) - 180.0
 
         # calculate the lower and upper indicies of the lat array
         latindex = np.nonzero(lats == lat)[0][0]
@@ -364,18 +370,18 @@ def queryFileAggregateDateRangeSingleCoordinate(querystartdate, queryenddate, va
     return aggregate
 
 
-def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, variable, aggregatefunction, lat_bounds, lon_bounds):
+def queryFileConsecutiveDaysDateRangeRectangle(querydate, days, variable, aggregatefunction, lat_bounds, lon_bounds):
     """
-    Query for number of consecutive days for a given netCDF variable, date range, cunction, rectanglar area
+    Query for number of consecutive days for a given GFS variable, date, number of forecast days, cunction, rectanglar area
 
     will return a 2d array of values for the supplied parameters
 
     Parameters
     ----------
-    querystartdate : date
-        start date for query
-    queryenddate : date
-        end date for query
+    querydate : date
+        date for query
+    days : int
+        number of days to forecast
     variable : str
         variable to query from the netCDF file
     aggregatefunction : str
@@ -396,7 +402,7 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
 
     """
 
-    file_name_list = getfilenames(querystartdate, queryenddate)
+    file_name_list = getfilenames(querydate, days)
 
     aggregate = []
     returnTuple = []
@@ -408,12 +414,15 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
         ds = Dataset(filename)
 
         #grab the lat and lon variable arrays
-        lats = ds.variables['lat_110'][:]
-        lons = ds.variables['lon_110'][:]
+        lats = ds.variables['lat_0'][:]
+        lons = ds.variables['lon_0'][:]
+        lons = np.mod(lons - 180.0, 360.0) - 180.0
 
         #calculate the lower and upper indicies of the lat array
         latlowerindex = np.argmin(np.abs(lats - lat_bounds[0]))
         latupperindex = np.argmin(np.abs(lats - lat_bounds[1]))
+        if latupperindex<latlowerindex:
+            latlowerindex, latupperindex = latupperindex, latlowerindex
 
         #calculate the lower and upper indices of the lon array
         lonlowerindex = np.argmin(np.abs(lons - lon_bounds[0]))
@@ -476,18 +485,18 @@ def queryFileConsecutiveDaysDateRangeRectangle(querystartdate, queryenddate, var
     return returnTuple
 
 
-def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate, variable, aggregatefunction, lat, lon):
+def queryFileConsecutivedDateRangeSingleCoordinate(querydate, days, variable, aggregatefunction, lat, lon):
     """
-    Query for number of consecutive days for a given netCDF variable, date range, cunction, single coordinate
+    Query for number of consecutive days for a given GFS variable, date, number of forecast days, cunction, single coordinate
 
     will return a 2d array of values for the supplied parameters
 
     Parameters
     ----------
-    querystartdate : date
-        start date for query
-    queryenddate : date
-        end date for query
+    querydate : date
+        date for query
+    days : int
+        number of days to forecast
     variable : str
         variable to query from the netCDF file
     aggregatefunction : str
@@ -504,7 +513,7 @@ def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate,
 
     """
 
-    file_name_list = getfilenames(querystartdate, queryenddate)
+    file_name_list = getfilenames(querydate, days)
 
     aggregate = 0
 
@@ -514,8 +523,9 @@ def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate,
         ds = Dataset(filename)
 
         #grab the lat and lon variable arrays
-        lats = ds.variables['lat_110'][:]
-        lons = ds.variables['lon_110'][:]
+        lats = ds.variables['lat_0'][:]
+        lons = ds.variables['lon_0'][:]
+        lons = np.mod(lons - 180.0, 360.0) - 180.0
 
         # calculate the lower and upper indicies of the lat array
         latindex = np.nonzero(lats == lat)[0][0]
@@ -555,21 +565,23 @@ def queryFileConsecutivedDateRangeSingleCoordinate(querystartdate, queryenddate,
 
     return aggregate
 
+
+
 lat_bnds = [25.0, 26.0]
 lon_bnds = [-103, -102]
 
-print(queryFileSingleDateRectangle(date(2018, 1, 1), 'MAX_TMP_110_HTGL', lat_bnds, lon_bnds))
-#print(queryFileSingleDateSingleCoordinate(date(2018, 1, 1), 'MAX_TMP_110_HTGL', 25.063, -107.938))
+#print(queryFileSingleDateRectangle(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', lat_bnds, lon_bnds))
+#print(queryFileSingleDateSingleCoordinate(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', 25, -107))
 
-#print(queryFileAggregateDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'avg', lat_bnds, lon_bnds))
+#print(queryFileAggregateDateRangeRectangle(date(2018, 1, 1), 3, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'avg', lat_bnds, lon_bnds))
 
-#print(queryFileAggregateDateRangeSingleCoordinate(date(2018, 1, 1), date(2018, 1, 3), 'MAX_TMP_110_HTGL', 'min', 25.063, -107.938))
-
-
-#print(queryFileConsecutiveHotColdDateRangeSingleCoordinate(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', 25.063, -107.938))
+#print(queryFileAggregateDateRangeSingleCoordinate(date(2018, 1, 1), 3, 'MAX_TMP_P0_L1_GLL0', 'min', 25, -107))
 
 
-#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'hot', lat_bnds, lon_bnds))
-#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'AVG_MAX_MIN_TMP_110_HTGL', 'cold', lat_bnds, lon_bnds))
-#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'wet', lat_bnds, lon_bnds))
-#print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), date(2018, 1, 3), 'A_PCP_110_SFC_acc1h', 'dry', lat_bnds, lon_bnds))
+#print(queryFileConsecutiveHotColdDateRangeSingleCoordinate(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'cold', 25, -107))
+
+
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'hot', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'cold', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'APCP_P8_L1_GLL0_acc6h', 'wet', lat_bnds, lon_bnds))
+print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'APCP_P8_L1_GLL0_acc6h', 'dry', lat_bnds, lon_bnds))
