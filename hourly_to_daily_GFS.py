@@ -26,6 +26,8 @@ VARIABLE_NAMES = ['TMP_P0_L1_GLL0',  # Temperature
                   'VGRD_P0_L104_GLL0',  # v-component of wind
                   'RH_P0_L200_GLL0',  # Relative     humidity
                   'APCP_P8_L1_GLL0_acc6h',  # Total precipitation
+                  'DPT_P0_L103_GLL0', #Dew point temperature
+                  'DSWRF_P8_L1_GLL0_avg6h', #Downward shortwave radiation
                   'lat_0',  # latitude
                   'lon_0'] # longitude
 

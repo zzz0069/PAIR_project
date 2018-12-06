@@ -15,6 +15,7 @@
     variables included in the NLDAS netCDF file:
         Name                        Description                             Units
         APCP_P8_L1_GLL0_acc6h       Total Precipitation                     kg/m^2
+        RH_P0_L200_GLL0             Avg Relative Humidity                   %
         AVG_MAX_MIN_TMP_P0_L1_GLL0  Avg of Min/Max Temp                     k
         MAX_RH_P0_L200_GLL0         Maximum relative humidity               %
         MIN_RH_P0_L200_GLL0         Minimum specific humidity               %
@@ -23,6 +24,8 @@
         UGRD_P0_L104_GLL0           Avg u-component of wind                 m/s
         VGRD_P0_L104_GLL0           Avg v-component of wind                 m/s
         WIND_SPEED                  Avg Wind Speed                          m/s
+        DPT_P0_L103_GLL0            Dew Point Temperature                   k
+        DSWRF_P8_L1_GLL0_avg6h      Downward shortwave radiation            W.m-2
         lat_0                       Lattitude                               radians
         lon_0                       Longitude                               radians
 
