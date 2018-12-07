@@ -105,7 +105,7 @@ def getfilenames(querydate, days):
     return file_name_list
 
 
-def queryFileSingleDateRectangle(querydate, forecastinterval, variable, lat_bounds, lon_bounds):
+def querySingleDateRectangle(querydate, forecastinterval, variable, lat_bounds, lon_bounds):
     """
     Query for a GFS variable, single date/forecast interval, rectanglar area
 
@@ -173,7 +173,8 @@ def queryFileSingleDateRectangle(querydate, forecastinterval, variable, lat_boun
 
     return returnTuple
 
-def queryFileSingleDateSingleCoordinate(querydate, forecastinterval, variable, lat, lon):
+
+def querySingleDateSingleCoordinate(querydate, forecastinterval, variable, lat, lon):
     """
     Query for a GFS variable, single date/forecast, single coordinate
 
@@ -216,7 +217,8 @@ def queryFileSingleDateSingleCoordinate(querydate, forecastinterval, variable, l
 
     return dataSubset
 
-def queryFileAggregateDateRangeRectangle(querydate, days, variable, aggregatefunction, lat_bounds, lon_bounds):
+
+def queryAggregateDateRangeRectangle(querydate, days, variable, aggregatefunction, lat_bounds, lon_bounds):
     """
     Query for a GFS variable, date, number of forecast days, rectanglar area
 
@@ -306,7 +308,7 @@ def queryFileAggregateDateRangeRectangle(querydate, days, variable, aggregatefun
     return returnTuple
 
 
-def queryFileAggregateDateRangeSingleCoordinate(querydate, days, variable, aggregatefunction, lat, lon):
+def queryAggregateDateRangeSingleCoordinate(querydate, days, variable, aggregatefunction, lat, lon):
     """
     Query for a GFS variable, date, number of forecast days, single coordinate
 
@@ -373,7 +375,7 @@ def queryFileAggregateDateRangeSingleCoordinate(querydate, days, variable, aggre
     return aggregate
 
 
-def queryFileConsecutiveDaysDateRangeRectangle(querydate, days, variable, aggregatefunction, lat_bounds, lon_bounds):
+def queryConsecutiveDaysDateRangeRectangle(querydate, days, variable, aggregatefunction, lat_bounds, lon_bounds):
     """
     Query for number of consecutive days for a given GFS variable, date, number of forecast days, cunction, rectanglar area
 
@@ -488,7 +490,7 @@ def queryFileConsecutiveDaysDateRangeRectangle(querydate, days, variable, aggreg
     return returnTuple
 
 
-def queryFileConsecutivedDateRangeSingleCoordinate(querydate, days, variable, aggregatefunction, lat, lon):
+def queryConsecutivedDateRangeSingleCoordinate(querydate, days, variable, aggregatefunction, lat, lon):
     """
     Query for number of consecutive days for a given GFS variable, date, number of forecast days, cunction, single coordinate
 
@@ -573,18 +575,18 @@ def queryFileConsecutivedDateRangeSingleCoordinate(querydate, days, variable, ag
 lat_bnds = [20.0, 26.0]
 lon_bnds = [-110, -102]
 
-#print(queryFileSingleDateRectangle(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', lat_bnds, lon_bnds))
-#print(queryFileSingleDateSingleCoordinate(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', 25, -107))
+#print(querySingleDateRectangle(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', lat_bnds, lon_bnds))
+#print(querySingleDateSingleCoordinate(date(2018, 1, 1), 24, 'MAX_TMP_P0_L1_GLL0', 25, -107))
 
-#print(queryFileAggregateDateRangeRectangle(date(2018, 1, 1), 3, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'avg', lat_bnds, lon_bnds))
+#print(queryAggregateDateRangeRectangle(date(2018, 1, 1), 3, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'avg', lat_bnds, lon_bnds))
 
-#print(queryFileAggregateDateRangeSingleCoordinate(date(2018, 1, 1), 3, 'MAX_TMP_P0_L1_GLL0', 'min', 25, -107))
-
-
-#print(queryFileConsecutiveHotColdDateRangeSingleCoordinate(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'cold', 25, -107))
+#print(queryAggregateDateRangeSingleCoordinate(date(2018, 1, 1), 3, 'MAX_TMP_P0_L1_GLL0', 'min', 25, -107))
 
 
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'hot', lat_bnds, lon_bnds))
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'cold', lat_bnds, lon_bnds))
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'APCP_P8_L1_GLL0_acc6h', 'wet', lat_bnds, lon_bnds))
-print(queryFileConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'APCP_P8_L1_GLL0_acc6h', 'dry', lat_bnds, lon_bnds))
+#print(queryConsecutiveHotColdDateRangeSingleCoordinate(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'cold', 25, -107))
+
+
+print(queryConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'hot', lat_bnds, lon_bnds))
+print(queryConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'AVG_MAX_MIN_TMP_P0_L1_GLL0', 'cold', lat_bnds, lon_bnds))
+print(queryConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'APCP_P8_L1_GLL0_acc6h', 'wet', lat_bnds, lon_bnds))
+print(queryConsecutiveDaysDateRangeRectangle(date(2018, 1, 1), 5, 'APCP_P8_L1_GLL0_acc6h', 'dry', lat_bnds, lon_bnds))
